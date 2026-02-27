@@ -1,4 +1,3 @@
-// database/migrations/2024_01_01_000005_create_author_book_table.php
 <?php
 
 use Illuminate\Database\Migrations\Migration;

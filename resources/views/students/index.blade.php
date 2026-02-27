@@ -1,7 +1,3 @@
-@extends('layouts.app')
-@section('title', 'Students')
-
-@php $title = 'Students'; @endphp
 
 <x-app-layout>
 
@@ -95,9 +91,7 @@
         </div>
 
         @if($students->hasPages())
-        <div class="pagination-wrap">
-            {{ $students->links() }}
-        </div>
+        <div class="pagination-wrap">{{ $students->links() }}</div>
         @endif
     </div>
 </div>

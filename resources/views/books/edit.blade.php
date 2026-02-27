@@ -2,98 +2,112 @@
 
 <header class="topbar">
     <div>
-        <h1>Books</h1>
-        <div class="topbar-breadcrumb">Catalog & inventory management</div>
+        <h1>Edit Book</h1>
+        <div class="topbar-breadcrumb">Update: {{ $book->title }}</div>
     </div>
     <div class="topbar-right">
-        <a href="{{ route('books.create') }}" class="btn btn-primary">
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-            Add Book
-        </a>
+        <a href="{{ route('books.show', $book) }}" class="btn btn-outline">← Back</a>
     </div>
 </header>
 
 <div class="content">
 
-    @if(session('success'))
-    <div class="alert alert-success">
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-        {{ session('success') }}
+    @if($errors->any())
+    <div class="alert alert-danger">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        <div>
+            <div style="font-weight:500;margin-bottom:4px;">There were errors with your submission</div>
+            <ul style="margin:0;padding-left:20px;">
+                @foreach($errors->all() as $error)
+                <li style="font-size:13px;">{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     </div>
     @endif
 
     <div class="page-card">
-        <div class="page-card-header">
-            <span class="page-card-title">All Books <span style="font-size:12px;color:var(--muted);font-weight:400;margin-left:8px;">{{ $books->total() }} titles</span></span>
-        </div>
+        <form method="POST" action="{{ route('books.update', $book) }}" style="display:flex;flex-direction:column;gap:24px;">
+            @csrf
+            @method('PUT')
 
-        <div style="overflow-x:auto;">
-            <table class="lib-table">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Authors</th>
-                        <th>ISBN</th>
-                        <th>Available</th>
-                        <th>Total</th>
-                        <th style="text-align:right;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($books as $book)
-                    @php
-                        $pct = $book->total_copies > 0 ? ($book->available_copies / $book->total_copies) * 100 : 0;
-                        $availColor = $pct >= 60 ? 'chip-active' : ($pct >= 30 ? 'chip-gold' : 'chip-overdue');
-                    @endphp
-                    <tr>
-                        <td>
-                            <div style="font-weight:500;font-size:13px;">{{ $book->title }}</div>
-                            @if($book->description)
-                            <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ Str::limit($book->description,55) }}</div>
+            <!-- Book Title -->
+            <div>
+                <label class="form-label">Book Title *</label>
+                <input type="text" name="title" class="form-input" value="{{ old('title', $book->title) }}" required>
+                @error('title')
+                <div style="color:#c72d2d;font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- ISBN -->
+            <div>
+                <label class="form-label">ISBN</label>
+                <input type="text" name="isbn" class="form-input" value="{{ old('isbn', $book->isbn) }}">
+                @error('isbn')
+                <div style="color:#c72d2d;font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-input" style="min-height:120px;resize:vertical;">{{ old('description', $book->description) }}</textarea>
+                @error('description')
+                <div style="color:#c72d2d;font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- Authors Selection -->
+            <div>
+                <label class="form-label">Authors *</label>
+                <div style="display:grid;gap:8px;margin-top:8px;">
+                    @forelse($authors as $author)
+                    <label style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg-secondary);border-radius:6px;cursor:pointer;">
+                        <input type="checkbox" name="author_ids[]" value="{{ $author->id }}"
+                            {{ $book->authors->contains($author->id) ? 'checked' : '' }}>
+                        <div>
+                            <div style="font-weight:500;font-size:13px;">{{ $author->name }}</div>
+                            @if($author->email)
+                            <div style="font-size:11px;color:var(--muted);">{{ $author->email }}</div>
                             @endif
-                        </td>
-                        <td>
-                            <div style="display:flex;flex-wrap:wrap;gap:4px;">
-                                @foreach($book->authors as $author)
-                                <span style="font-size:11px;background:#f0ede8;color:var(--ink);padding:2px 8px;border-radius:99px;">{{ $author->name }}</span>
-                                @endforeach
-                            </div>
-                        </td>
-                        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);">{{ $book->isbn ?? '—' }}</td>
-                        <td>
-                            <span class="chip {{ $availColor }}">{{ $book->available_copies }}</span>
-                        </td>
-                        <td style="font-size:13px;color:var(--muted);">{{ $book->total_copies }}</td>
-                        <td>
-                            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
-                                <a href="{{ route('books.show', $book) }}" class="btn btn-outline btn-sm">View</a>
-                                <a href="{{ route('books.edit', $book) }}" class="btn btn-outline btn-sm">Edit</a>
-                                <form method="POST" action="{{ route('books.destroy', $book) }}" onsubmit="return confirm('Delete \'{{ $book->title }}\'?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-ghost btn-sm">
-                                        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="6">
-                        <div class="empty-state">
-                            <div class="empty-icon">📚</div>
-                            <div class="empty-title">No books yet</div>
-                            <div class="empty-desc">Add authors first, then add books to the catalog.</div>
-                            <a href="{{ route('books.create') }}" class="btn btn-primary">+ Add Book</a>
                         </div>
-                    </td></tr>
+                    </label>
+                    @empty
+                    <div style="padding:15px;background:#fef3f2;border-radius:6px;border:1px solid #fecdd3;color:#c72d2d;font-size:13px;">
+                        No authors available. <a href="{{ route('authors.create') }}" style="text-decoration:underline;font-weight:500;">Create an author first</a>
+                    </div>
                     @endforelse
-                </tbody>
-            </table>
-        </div>
+                </div>
+                @error('author_ids')
+                <div style="color:#c72d2d;font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
 
-        @if($books->hasPages())
-        <div class="pagination-wrap">{{ $books->links() }}</div>
-        @endif
+            <!-- Total Copies -->
+            <div>
+                <label class="form-label">Total Copies *</label>
+                <input type="number" name="total_copies" class="form-input" value="{{ old('total_copies', $book->total_copies) }}" min="1" required>
+                @error('total_copies')
+                <div style="color:#c72d2d;font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- Available Copies -->
+            <div>
+                <label class="form-label">Available Copies *</label>
+                <input type="number" name="available_copies" class="form-input" value="{{ old('available_copies', $book->available_copies) }}" min="0" required>
+                @error('available_copies')
+                <div style="color:#c72d2d;font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <!-- Actions -->
+            <div style="display:flex;gap:8px;margin-top:16px;">
+                <button type="submit" class="btn btn-primary">Update Book</button>
+                <a href="{{ route('books.show', $book) }}" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
 
